@@ -13,25 +13,64 @@ Download and filter biodiversity occurrence data from [GBIF](https://www.gbif.or
 - **Robust API Handling**: Automatic retries, rate limit handling, pagination
 - **Dual Interface**: Command-line for scripting, GUI for interactive use
 - **Configuration Files**: Save and reuse your filter settings
-- **Cross-Platform**: Works on Windows, macOS, and Linux
+- **Cross-Platform**: Works on Windows, macOS (Intel & Apple Silicon), and Linux
+- **No Python Required**: Standalone executables available for all platforms
 
 ## Installation
 
-### From PyPI (recommended)
+### Option 1: Download Standalone Executable (No Python Required)
+
+Download the latest release for your platform from the [Releases page](https://github.com/Camponotus-vagus/gbif-downloader/releases):
+
+| Platform | CLI | GUI |
+|----------|-----|-----|
+| **Windows** | `gbif-download-windows.exe` | `gbif-gui-windows.exe` |
+| **Linux** | `gbif-download-linux` | `gbif-gui-linux` |
+| **macOS Intel** | `gbif-download-macos-intel` | `gbif-gui-macos-intel` |
+| **macOS Apple Silicon (M1/M2/M3)** | `gbif-download-macos-arm64` | `gbif-gui-macos-arm64` |
+
+#### Windows
+Just download and double-click the `.exe` file, or run from Command Prompt:
+```cmd
+gbif-download-windows.exe --genus Nebria --output nebria.xlsx
+```
+
+#### macOS
+After downloading, you may need to allow the app to run:
+```bash
+# Remove quarantine attribute
+xattr -d com.apple.quarantine ./gbif-download-macos-*
+
+# Make executable
+chmod +x ./gbif-download-macos-*
+
+# Run
+./gbif-download-macos-arm64 --genus Nebria --output nebria.xlsx
+```
+
+Or go to **System Preferences → Security & Privacy → General** and click **"Open Anyway"**.
+
+#### Linux
+```bash
+chmod +x ./gbif-download-linux
+./gbif-download-linux --genus Nebria --output nebria.xlsx
+```
+
+### Option 2: Install with pip
 
 ```bash
 pip install gbif-downloader
 ```
 
-### From Source
+### Option 3: Install from Source
 
 ```bash
-git clone https://github.com/yourusername/gbif-downloader.git
+git clone https://github.com/Camponotus-vagus/gbif-downloader.git
 cd gbif-downloader
 pip install -e .
 ```
 
-### Dependencies
+### Dependencies (only for pip install)
 
 - Python 3.9+
 - requests
@@ -208,11 +247,24 @@ gbif-download --config my_search.yaml
 
 ## Why Use This Instead of GBIF.org?
 
+| Aspect | GBIF Website | GBIF Downloader |
+|--------|--------------|-----------------|
+| **Speed** | Slow web interface, page reloads | Fast local filtering |
+| **Batch Processing** | One search at a time | Script multiple taxa |
+| **Unknown Uncertainty** | Can't highlight or handle specially | Yellow highlighting in Excel |
+| **GIS Integration** | Must convert manually | Direct GeoJSON export |
+| **Reproducibility** | Remember settings manually | Save configs as YAML |
+| **Large Downloads** | Timeout issues, email delays | Robust retry logic |
+| **No Python Needed** | N/A | Standalone executables! |
+
+### Key Benefits
+
 - **Faster filtering**: Apply complex filters without waiting for GBIF's web interface
 - **Batch processing**: Download multiple taxa or run scheduled downloads
 - **Custom output**: Get exactly the columns and format you need
 - **Scriptable**: Integrate into your research pipeline
 - **Offline analysis**: Work with your data locally
+- **Uncertainty handling**: The "killer feature" - GBIF has millions of records where uncertainty is NULL. This tool lets you keep them but flag them visually (yellow in Excel)
 
 ## Troubleshooting
 
@@ -265,7 +317,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this tool in your research, please cite:
 
 ```
-GBIF Downloader (2024). https://github.com/yourusername/gbif-downloader
+GBIF Downloader (2024). https://github.com/Camponotus-vagus/gbif-downloader
 ```
 
 And don't forget to cite GBIF and the data providers for any data you download!

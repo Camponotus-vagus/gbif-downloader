@@ -1,0 +1,285 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v2.0.0)'
+        required: true
+        default: 'v2.0.0'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build CLI executable
+        run: |
+          pyinstaller --onefile --name gbif-download-windows --console gbif_downloader/cli.py
+
+      - name: Build GUI executable
+        run: |
+          pyinstaller --onefile --name gbif-gui-windows --windowed --icon=NONE gbif_downloader/gui.py
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-executables
+          path: |
+            dist/gbif-download-windows.exe
+            dist/gbif-gui-windows.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build CLI executable
+        run: |
+          pyinstaller --onefile --name gbif-download-linux gbif_downloader/cli.py
+
+      - name: Build GUI executable
+        run: |
+          pyinstaller --onefile --name gbif-gui-linux gbif_downloader/gui.py
+
+      - name: Make executables executable
+        run: |
+          chmod +x dist/gbif-download-linux
+          chmod +x dist/gbif-gui-linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-executables
+          path: |
+            dist/gbif-download-linux
+            dist/gbif-gui-linux
+
+  build-macos-intel:
+    runs-on: macos-13  # Intel x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build CLI executable
+        run: |
+          pyinstaller --onefile --name gbif-download-macos-intel --console gbif_downloader/cli.py
+
+      - name: Build GUI executable
+        run: |
+          pyinstaller --onefile --name gbif-gui-macos-intel gbif_downloader/gui.py
+
+      - name: Ad-hoc sign executables
+        run: |
+          codesign --force --deep --sign - dist/gbif-download-macos-intel
+          codesign --force --deep --sign - dist/gbif-gui-macos-intel
+
+      - name: Make executables executable
+        run: |
+          chmod +x dist/gbif-download-macos-intel
+          chmod +x dist/gbif-gui-macos-intel
+
+      - name: Upload macOS Intel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-intel-executables
+          path: |
+            dist/gbif-download-macos-intel
+            dist/gbif-gui-macos-intel
+
+  build-macos-arm:
+    runs-on: macos-14  # Apple Silicon arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build CLI executable
+        run: |
+          pyinstaller --onefile --name gbif-download-macos-arm64 --console gbif_downloader/cli.py
+
+      - name: Build GUI executable
+        run: |
+          pyinstaller --onefile --name gbif-gui-macos-arm64 gbif_downloader/gui.py
+
+      - name: Ad-hoc sign executables
+        run: |
+          codesign --force --deep --sign - dist/gbif-download-macos-arm64
+          codesign --force --deep --sign - dist/gbif-gui-macos-arm64
+
+      - name: Make executables executable
+        run: |
+          chmod +x dist/gbif-download-macos-arm64
+          chmod +x dist/gbif-gui-macos-arm64
+
+      - name: Upload macOS ARM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm-executables
+          path: |
+            dist/gbif-download-macos-arm64
+            dist/gbif-gui-macos-arm64
+
+  create-release:
+    needs: [build-windows, build-linux, build-macos-intel, build-macos-arm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+
+          # Windows
+          cp artifacts/windows-executables/gbif-download-windows.exe release/
+          cp artifacts/windows-executables/gbif-gui-windows.exe release/
+
+          # Linux
+          cp artifacts/linux-executables/gbif-download-linux release/
+          cp artifacts/linux-executables/gbif-gui-linux release/
+
+          # macOS Intel
+          cp artifacts/macos-intel-executables/gbif-download-macos-intel release/
+          cp artifacts/macos-intel-executables/gbif-gui-macos-intel release/
+
+          # macOS ARM (Apple Silicon)
+          cp artifacts/macos-arm-executables/gbif-download-macos-arm64 release/
+          cp artifacts/macos-arm-executables/gbif-gui-macos-arm64 release/
+
+          # Create ZIP archives for easier download
+          cd release
+          zip gbif-downloader-windows.zip gbif-download-windows.exe gbif-gui-windows.exe
+          tar -czvf gbif-downloader-linux.tar.gz gbif-download-linux gbif-gui-linux
+          tar -czvf gbif-downloader-macos-intel.tar.gz gbif-download-macos-intel gbif-gui-macos-intel
+          tar -czvf gbif-downloader-macos-arm64.tar.gz gbif-download-macos-arm64 gbif-gui-macos-arm64
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: GBIF Downloader ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ## GBIF Downloader ${{ steps.version.outputs.version }}
+
+            Download and filter biodiversity occurrence data from GBIF.
+
+            ### Downloads
+
+            | Platform | CLI | GUI | Archive |
+            |----------|-----|-----|---------|
+            | **Windows** | `gbif-download-windows.exe` | `gbif-gui-windows.exe` | `gbif-downloader-windows.zip` |
+            | **Linux** | `gbif-download-linux` | `gbif-gui-linux` | `gbif-downloader-linux.tar.gz` |
+            | **macOS Intel** | `gbif-download-macos-intel` | `gbif-gui-macos-intel` | `gbif-downloader-macos-intel.tar.gz` |
+            | **macOS Apple Silicon** | `gbif-download-macos-arm64` | `gbif-gui-macos-arm64` | `gbif-downloader-macos-arm64.tar.gz` |
+
+            ### Quick Start
+
+            **Windows:**
+            ```
+            gbif-download-windows.exe --genus Nebria --output nebria.xlsx
+            ```
+
+            **macOS/Linux:**
+            ```bash
+            chmod +x gbif-download-*
+            ./gbif-download-macos-arm64 --genus Nebria --output nebria.xlsx
+            ```
+
+            ### macOS Gatekeeper Note
+
+            On macOS, you may need to allow the app to run:
+            1. Try to open the app (it will be blocked)
+            2. Go to **System Preferences → Security & Privacy → General**
+            3. Click **"Open Anyway"** next to the blocked app
+
+            Or use Terminal:
+            ```bash
+            xattr -d com.apple.quarantine ./gbif-download-macos-*
+            ```
+
+            ### Features
+            - CLI and GUI interfaces
+            - Export to Excel, CSV, GeoJSON
+            - Filter by year, uncertainty, elevation, country
+            - No Python installation required!
+          files: |
+            release/gbif-download-windows.exe
+            release/gbif-gui-windows.exe
+            release/gbif-download-linux
+            release/gbif-gui-linux
+            release/gbif-download-macos-intel
+            release/gbif-gui-macos-intel
+            release/gbif-download-macos-arm64
+            release/gbif-gui-macos-arm64
+            release/gbif-downloader-windows.zip
+            release/gbif-downloader-linux.tar.gz
+            release/gbif-downloader-macos-intel.tar.gz
+            release/gbif-downloader-macos-arm64.tar.gz
