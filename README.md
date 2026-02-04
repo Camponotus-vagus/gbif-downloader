@@ -317,7 +317,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you use this tool in your research, please cite:
 
 ```
-GBIF Downloader (2024). https://github.com/Camponotus-vagus/gbif-downloader
+GBIF Downloader (2026). https://github.com/Camponotus-vagus/gbif-downloader
 ```
 
 And don't forget to cite GBIF and the data providers for any data you download!
