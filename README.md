@@ -321,3 +321,7 @@ GBIF Downloader (2024). https://github.com/Camponotus-vagus/gbif-downloader
 ```
 
 And don't forget to cite GBIF and the data providers for any data you download!
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Camponotus-vagus/gbif-downloader&type=Date)](https://star-history.com/#Camponotus-vagus/gbif-downloader&Date)
