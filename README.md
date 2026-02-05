@@ -1,327 +1,326 @@
-# GBIF Downloader
+# Entomology Labels Generator
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Download and filter biodiversity occurrence data from [GBIF](https://www.gbif.org/) (Global Biodiversity Information Facility) with both CLI and GUI interfaces.
+Genera etichette professionali per specimen entomologici con supporto per molteplici formati di input e output.
 
-## Features
+## Caratteristiche
 
-- **Smart Filtering**: Filter by taxonomy, year range, coordinate uncertainty, elevation, country
-- **Multiple Export Formats**: Excel (with highlighting), CSV, GeoJSON (for GIS software)
-- **Robust API Handling**: Automatic retries, rate limit handling, pagination
-- **Dual Interface**: Command-line for scripting, GUI for interactive use
-- **Configuration Files**: Save and reuse your filter settings
-- **Cross-Platform**: Works on Windows, macOS (Intel & Apple Silicon), and Linux
-- **No Python Required**: Standalone executables available for all platforms
+- **Interfaccia Grafica (GUI)**: Interfaccia intuitiva per creare e gestire etichette
+- **Interfaccia Linea di Comando (CLI)**: Per automazione e scripting
+- **Formati di Input Multipli**: Excel (.xlsx, .xls), CSV, TXT, Word (.docx), JSON, YAML
+- **Formati di Output Multipli**: HTML, PDF, Word (.docx)
+- **Layout Configurabile**: 10x13 etichette per pagina (default A4), completamente personalizzabile
+- **Generazione Sequenziale**: Crea serie di etichette con codici incrementali (N1, N2, N3...)
 
-## Installation
+## Formato Etichetta
 
-### Option 1: Download Standalone Executable (No Python Required)
-
-Download the latest release for your platform from the [Releases page](https://github.com/Camponotus-vagus/gbif-downloader/releases):
-
-| Platform | CLI | GUI |
-|----------|-----|-----|
-| **Windows** | `gbif-download-windows.exe` | `gbif-gui-windows.exe` |
-| **Linux** | `gbif-download-linux` | `gbif-gui-linux` |
-| **macOS Intel** | `gbif-download-macos-intel` | `gbif-gui-macos-intel` |
-| **macOS Apple Silicon (M1/M2/M3)** | `gbif-download-macos-arm64` | `gbif-gui-macos-arm64` |
-
-#### Windows
-Just download and double-click the `.exe` file, or run from Command Prompt:
-```cmd
-gbif-download-windows.exe --genus Nebria --output nebria.xlsx
+Ogni etichetta contiene:
+```
+Italia, Trentino Alto Adige,        ← Riga 1: Località principale
+Giustino (TN), Vedretta d'Amola     ← Riga 2: Località secondaria
+                                     ← Riga vuota
+N1                                   ← Codice specimen
+15.vi.2024                          ← Data raccolta
 ```
 
-#### macOS
-After downloading, you may need to allow the app to run:
-```bash
-# Remove quarantine attribute
-xattr -d com.apple.quarantine ./gbif-download-macos-*
+## Installazione
 
-# Make executable
-chmod +x ./gbif-download-macos-*
-
-# Run
-./gbif-download-macos-arm64 --genus Nebria --output nebria.xlsx
-```
-
-Or go to **System Preferences → Security & Privacy → General** and click **"Open Anyway"**.
-
-#### Linux
-```bash
-chmod +x ./gbif-download-linux
-./gbif-download-linux --genus Nebria --output nebria.xlsx
-```
-
-### Option 2: Install with pip
+### Opzione 1: pip (consigliato)
 
 ```bash
-pip install gbif-downloader
+# Installazione base
+pip install entomology-labels
+
+# Con supporto completo (tutti i formati)
+pip install entomology-labels[all]
 ```
 
-### Option 3: Install from Source
+### Opzione 2: Da sorgente
 
 ```bash
-git clone https://github.com/Camponotus-vagus/gbif-downloader.git
-cd gbif-downloader
-pip install -e .
+git clone https://github.com/Camponotus-vagus/entomology-labels.git
+cd entomology-labels
+pip install -e .[all]
 ```
 
-### Dependencies (only for pip install)
+### Dipendenze Opzionali
 
-- Python 3.9+
-- requests
-- pandas
-- openpyxl (for Excel export)
-- click (for CLI)
-- rich (for CLI progress bars)
-- PyYAML (for config files)
-- geojson (for GeoJSON export)
+| Feature | Pacchetti | Installazione |
+|---------|-----------|---------------|
+| Excel | pandas, openpyxl | `pip install entomology-labels[excel]` |
+| Word | python-docx | `pip install entomology-labels[docx]` |
+| PDF | weasyprint | `pip install entomology-labels[pdf]` |
+| YAML | pyyaml | `pip install entomology-labels[yaml]` |
+| Tutto | - | `pip install entomology-labels[all]` |
 
-## Quick Start
+> **Nota**: Per la generazione PDF, weasyprint richiede dipendenze di sistema aggiuntive. Consulta la [documentazione weasyprint](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html).
 
-### Command Line
+## Utilizzo
+
+### Interfaccia Grafica (GUI)
 
 ```bash
-# Download all Nebria specimens to Excel
-gbif-download --genus Nebria --output nebria_data.xlsx
-
-# Download specific species as GeoJSON (for QGIS)
-gbif-download --genus Nebria --species germarii,castanea --format geojson -o nebria.geojson
-
-# Filter by country and year range
-gbif-download --genus Nebria --country IT,CH,AT --year-start 1900 -o alpine_nebria.xlsx
-
-# Use a configuration file
-gbif-download --config my_search.yaml
+entomology-labels-gui
 ```
 
-### Graphical Interface
-
-```bash
-gbif-gui
-```
-
-Or launch from Python:
+O da Python:
 
 ```python
-from gbif_downloader.gui import main
+from entomology_labels.gui import main
 main()
 ```
 
-### Python API
+La GUI permette di:
+- Aggiungere etichette manualmente
+- Importare dati da file
+- Configurare layout e dimensioni
+- Visualizzare anteprima
+- Esportare in HTML, PDF, DOCX
 
-```python
-from gbif_downloader import GBIFClient, FilterConfig, RecordFilter
-from gbif_downloader.exporters import ExcelExporter
-
-# Configure the search
-config = FilterConfig(
-    genus="Nebria",
-    species_list=["germarii", "castanea"],
-    year_start=1900,
-    uncertainty_max=1000,
-    require_elevation=True,
-)
-
-# Download data
-client = GBIFClient()
-taxon = client.match_taxon("Nebria", rank="GENUS")
-
-# Filter and collect records
-record_filter = RecordFilter(config)
-filtered_records = []
-
-for record in client.iter_occurrences_by_year(taxon.usage_key, year_start=1900):
-    result = record_filter.apply(record)
-    if result.keep:
-        filtered_records.append(record)
-
-# Export to Excel
-exporter = ExcelExporter()
-exporter.export(filtered_records, "nebria_data.xlsx")
-
-client.close()
-```
-
-## CLI Reference
-
-```
-Usage: gbif-download [OPTIONS]
-
-Options:
-  -g, --genus TEXT              Genus name to search
-  -s, --species TEXT            Species epithets, comma-separated
-  -f, --family TEXT             Family name for broader search
-  -y, --year-start INTEGER      Start year (default: 1800)
-  --year-end INTEGER            End year (default: current year)
-  -u, --uncertainty-max INTEGER Max coordinate uncertainty in meters (default: 1000)
-  -c, --country TEXT            Country codes, comma-separated (e.g., IT,CH,AT)
-  --require-year / --no-require-year
-                                Require year field (default: yes)
-  --require-elevation / --no-require-elevation
-                                Require elevation field (default: yes)
-  --keep-unknown-uncertainty / --drop-unknown-uncertainty
-                                Keep records with unknown uncertainty (default: yes)
-  --format [excel|csv|geojson]  Output format (default: excel)
-  -o, --output PATH             Output file path
-  --config PATH                 Load settings from YAML config file
-  -v, --verbose                 Enable verbose output
-  --version                     Show version and exit
-  --help                        Show this message and exit
-
-Commands:
-  init     Create an example configuration file
-  presets  List available preset configurations
-```
-
-## Configuration File
-
-Create a YAML configuration file for reusable searches:
-
-```yaml
-# my_search.yaml
-taxonomy:
-  genus: Nebria
-  species:
-    - germarii
-    - castanea
-
-filters:
-  year_start: 1900
-  year_end: 2024
-  uncertainty_max: 1000
-  require_year: true
-  require_elevation: false
-  keep_unknown_uncertainty: true
-  countries:
-    - IT
-    - CH
-    - AT
-
-output:
-  format: excel
-  filename: alpine_nebria.xlsx
-  highlight_uncertain: true
-```
-
-Then use it:
+### Linea di Comando (CLI)
 
 ```bash
-gbif-download --config my_search.yaml
+# Genera etichette da file Excel a HTML
+entomology-labels generate dati.xlsx -o etichette.html
+
+# Genera etichette da CSV a PDF
+entomology-labels generate dati.csv -o etichette.pdf
+
+# Genera etichette da JSON a Word
+entomology-labels generate dati.json -o etichette.docx
+
+# Con layout personalizzato
+entomology-labels generate dati.xlsx -o etichette.html --rows 12 --cols 15
+
+# Apri il file dopo la generazione
+entomology-labels generate dati.xlsx -o etichette.html --open
 ```
 
-## Export Formats
+#### Generazione Sequenziale
 
-### Excel (.xlsx)
-
-- Conditional formatting: yellow highlighting for records with unknown coordinate uncertainty
-- Auto-adjusted column widths
-- Frozen header row
-- Clickable GBIF links
-
-### CSV (.csv)
-
-- Standard comma-separated format
-- UTF-8 encoding
-- Compatible with any spreadsheet software
-
-### GeoJSON (.geojson)
-
-- Point geometry for each record
-- All record attributes as properties
-- Direct import into QGIS, ArcGIS, Leaflet, Mapbox
-
-## Filter Options Explained
-
-| Option | Description |
-|--------|-------------|
-| `require_year` | Exclude records without collection year |
-| `require_elevation` | Exclude records without elevation data |
-| `uncertainty_max` | Maximum acceptable coordinate uncertainty in meters |
-| `keep_unknown_uncertainty` | Keep records where uncertainty is not reported (common in museum data) |
-| `countries` | ISO country codes to filter by (e.g., IT, CH, AT) |
-
-## Why Use This Instead of GBIF.org?
-
-| Aspect | GBIF Website | GBIF Downloader |
-|--------|--------------|-----------------|
-| **Speed** | Slow web interface, page reloads | Fast local filtering |
-| **Batch Processing** | One search at a time | Script multiple taxa |
-| **Unknown Uncertainty** | Can't highlight or handle specially | Yellow highlighting in Excel |
-| **GIS Integration** | Must convert manually | Direct GeoJSON export |
-| **Reproducibility** | Remember settings manually | Save configs as YAML |
-| **Large Downloads** | Timeout issues, email delays | Robust retry logic |
-| **No Python Needed** | N/A | Standalone executables! |
-
-### Key Benefits
-
-- **Faster filtering**: Apply complex filters without waiting for GBIF's web interface
-- **Batch processing**: Download multiple taxa or run scheduled downloads
-- **Custom output**: Get exactly the columns and format you need
-- **Scriptable**: Integrate into your research pipeline
-- **Offline analysis**: Work with your data locally
-- **Uncertainty handling**: The "killer feature" - GBIF has millions of records where uncertainty is NULL. This tool lets you keep them but flag them visually (yellow in Excel)
-
-## Troubleshooting
-
-### "Taxon not found"
-
-- Check spelling of the genus/family name
-- Verify the taxon exists on [GBIF](https://www.gbif.org/species/search)
-- Try searching at a different taxonomic level
-
-### Rate limiting
-
-The GBIF API may rate limit requests. The tool automatically retries with exponential backoff, but for very large downloads, consider:
-
-- Using year-by-year download (default for large datasets)
-- Running during off-peak hours
-- Splitting your search into smaller batches
-
-### Missing data
-
-Museum specimens on GBIF vary in data quality. Common issues:
-
-- **No coordinates**: Many historical specimens lack georeferencing
-- **No uncertainty**: Coordinate uncertainty often not reported
-- **No elevation**: Elevation frequently missing from older records
-
-Use the `keep_unknown_uncertainty` option to include records without uncertainty data (highlighted in yellow in Excel output).
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Run tests (`pytest`)
-4. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [GBIF](https://www.gbif.org/) for providing free access to biodiversity data
-- All the museums and researchers who contribute occurrence data to GBIF
-
-## Citation
-
-If you use this tool in your research, please cite:
-
-```
-GBIF Downloader (2026). https://github.com/Camponotus-vagus/gbif-downloader
+```bash
+entomology-labels sequence \
+  --location1 "Italia, Trentino Alto Adige," \
+  --location2 "Giustino (TN), Vedretta d'Amola" \
+  --prefix N --start 1 --end 50 \
+  --date "15.vi.2024" \
+  -o etichette.html
 ```
 
-And don't forget to cite GBIF and the data providers for any data you download!
+#### Creare Template
 
-## Star History
+```bash
+# Crea template JSON
+entomology-labels template miei_dati.json
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Camponotus-vagus/gbif-downloader&type=Date)](https://star-history.com/#Camponotus-vagus/gbif-downloader&Date)
+# Crea template Excel
+entomology-labels template miei_dati.xlsx --format excel
+
+# Crea template CSV
+entomology-labels template miei_dati.csv --format csv
+```
+
+### API Python
+
+```python
+from entomology_labels import LabelGenerator, Label, LabelConfig
+from entomology_labels import load_data, generate_html, generate_pdf, generate_docx
+
+# Configurazione layout
+config = LabelConfig(
+    labels_per_row=10,
+    labels_per_column=13,
+    font_size_pt=6,
+)
+
+# Crea generatore
+generator = LabelGenerator(config)
+
+# Aggiungi etichette manualmente
+label = Label(
+    location_line1="Italia, Trentino Alto Adige,",
+    location_line2="Giustino (TN), Vedretta d'Amola",
+    code="N1",
+    date="15.vi.2024"
+)
+generator.add_label(label)
+
+# Oppure carica da file
+labels = load_data("dati.xlsx")
+generator.add_labels(labels)
+
+# Genera output
+generate_html(generator, "etichette.html", open_in_browser=True)
+generate_pdf(generator, "etichette.pdf")
+generate_docx(generator, "etichette.docx")
+```
+
+#### Generazione Sequenziale
+
+```python
+from entomology_labels import LabelGenerator
+
+generator = LabelGenerator()
+
+# Genera N1 fino a N50
+labels = generator.generate_sequential_labels(
+    location_line1="Italia, Trentino Alto Adige,",
+    location_line2="Giustino (TN), Vedretta d'Amola",
+    code_prefix="N",
+    start_number=1,
+    end_number=50,
+    date="15.vi.2024"
+)
+generator.add_labels(labels)
+```
+
+## Formati File di Input
+
+### Excel (.xlsx, .xls)
+
+Crea un foglio con le colonne:
+
+| location_line1 | location_line2 | code | date | count |
+|----------------|----------------|------|------|-------|
+| Italia, Trentino Alto Adige, | Giustino (TN), Vedretta d'Amola | N1 | 15.vi.2024 | 5 |
+| Italia, Lombardia, | Sondrio, Valmalenco | O1 | 20.vii.2024 | 3 |
+
+La colonna `count` è opzionale e serve per duplicare le etichette.
+
+### CSV
+
+```csv
+location_line1,location_line2,code,date,count
+"Italia, Trentino Alto Adige,","Giustino (TN), Vedretta d'Amola",N1,15.vi.2024,5
+"Italia, Lombardia,","Sondrio, Valmalenco",O1,20.vii.2024,3
+```
+
+### JSON
+
+```json
+{
+  "labels": [
+    {
+      "location_line1": "Italia, Trentino Alto Adige,",
+      "location_line2": "Giustino (TN), Vedretta d'Amola",
+      "code": "N1",
+      "date": "15.vi.2024",
+      "count": 5
+    }
+  ]
+}
+```
+
+### TXT (formato chiave-valore)
+
+```
+location1: Italia, Trentino Alto Adige,
+location2: Giustino (TN), Vedretta d'Amola
+code: N1
+date: 15.vi.2024
+count: 5
+
+location1: Italia, Lombardia,
+location2: Sondrio, Valmalenco
+code: O1
+date: 20.vii.2024
+count: 3
+```
+
+### Nomi Colonne Alternativi
+
+Il software riconosce vari nomi per le colonne:
+
+| Campo | Nomi accettati |
+|-------|----------------|
+| location_line1 | location1, località1, location, loc1 |
+| location_line2 | location2, località2, loc2 |
+| code | specimen_code, codice, id |
+| date | collection_date, data, data_raccolta |
+| count | quantity, quantità, n, copies |
+
+## Configurazione Layout
+
+### Parametri Disponibili
+
+| Parametro | Default | Descrizione |
+|-----------|---------|-------------|
+| labels_per_row | 10 | Etichette per riga |
+| labels_per_column | 13 | Etichette per colonna |
+| label_width_mm | 21.0 | Larghezza etichetta (mm) |
+| label_height_mm | 22.85 | Altezza etichetta (mm) |
+| page_width_mm | 210.0 | Larghezza pagina (mm) |
+| page_height_mm | 297.0 | Altezza pagina (mm) |
+| font_size_pt | 6.0 | Dimensione font (pt) |
+| font_family | Arial | Famiglia font |
+
+### Preimpostazioni
+
+- **A4 Standard**: 10x13 etichette (130 per pagina)
+- **A4 Compatto**: 12x15 etichette (180 per pagina)
+- **Letter US**: 10x12 etichette (120 per pagina)
+
+## Output HTML e Stampa PDF
+
+L'output HTML include un pulsante "Stampa" che apre la finestra di stampa del browser. Per salvare come PDF:
+
+1. Genera il file HTML
+2. Aprilo nel browser
+3. Clicca "Stampa" o usa Ctrl+P (Cmd+P su Mac)
+4. Seleziona "Salva come PDF" come destinazione
+5. Assicurati che i margini siano impostati su "Nessuno"
+
+## Esempi
+
+La cartella `examples/` contiene file di esempio:
+
+- `example_labels.json` - Formato JSON
+- `example_labels.csv` - Formato CSV
+- `example_labels.txt` - Formato TXT
+
+## Risoluzione Problemi
+
+### Errore "weasyprint not found"
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0
+
+# macOS
+brew install pango
+
+# Poi installa weasyprint
+pip install weasyprint
+```
+
+### Errore "pandas not found"
+
+```bash
+pip install pandas openpyxl
+```
+
+### Le etichette non si allineano correttamente
+
+- Verifica che i margini della stampante siano impostati su 0
+- Usa la modalità "Adatta alla pagina" se necessario
+- Prova a regolare i parametri `margin_*` nella configurazione
+
+## Contribuire
+
+Contributi sono benvenuti! Per contribuire:
+
+1. Fork del repository
+2. Crea un branch per la feature (`git checkout -b feature/NuovaFeature`)
+3. Commit delle modifiche (`git commit -m 'Aggiunge NuovaFeature'`)
+4. Push al branch (`git push origin feature/NuovaFeature`)
+5. Apri una Pull Request
+
+## Licenza
+
+Questo progetto è rilasciato sotto licenza MIT. Vedi il file [LICENSE](LICENSE) per i dettagli.
+
+## Crediti
+
+Ispirato da [insect-labels](https://github.com/tracyyao27/insect-labels) di Tracy Yao.

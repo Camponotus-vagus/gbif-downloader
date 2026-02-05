@@ -1,1 +1,1 @@
-"""Tests for GBIF Downloader."""
+"""Tests for entomology_labels package."""

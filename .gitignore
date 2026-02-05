@@ -52,16 +52,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
 # Environments
 .env
 .venv
@@ -80,11 +70,21 @@ venv.bak/
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Output files
-*.xlsx
-*.csv
-*.geojson
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Config directory
-.gbif_downloader/
+# Project specific
+output/
+*.html
+!examples/*.html
+*.pdf
+!examples/*.pdf
+*.docx
+!examples/*.docx
+temp/
+tmp/
